@@ -122,10 +122,52 @@ async function refreshInstanceTabs(origin: string) {
   );
 }
 
+const firefoxRegistrations = new Map<string, { unregister: () => void }>();
+const pendingRegistrations = new Map<string, Promise<void>>();
+
 async function registerInstance(origin: string, refreshOpenTabs = false) {
-  if (!chrome.scripting?.registerContentScripts) return;
+  const id = instanceScriptId(origin);
+  const pending = pendingRegistrations.get(id);
+  if (pending) {
+    await pending;
+    if (refreshOpenTabs) await refreshInstanceTabs(origin);
+    return;
+  }
+  const registration = registerInstanceOnce(origin, refreshOpenTabs);
+  pendingRegistrations.set(id, registration);
+  try {
+    await registration;
+  } finally {
+    pendingRegistrations.delete(id);
+  }
+}
+
+async function registerInstanceOnce(origin: string, refreshOpenTabs: boolean) {
   const match = instanceMatchPattern(origin);
   const id = instanceScriptId(origin);
+  const firefox = (globalThis as typeof globalThis & {
+    browser?: {
+      contentScripts?: {
+        register: (options: {
+          matches: string[];
+          js: { file: string }[];
+          runAt: string;
+        }) => Promise<{ unregister: () => void }>;
+      };
+    };
+  }).browser;
+  if (firefox?.contentScripts?.register) {
+    firefoxRegistrations.get(id)?.unregister();
+    const registration = await firefox.contentScripts.register({
+      matches: [match],
+      js: [{ file: "content/scripts.js" }],
+      runAt: "document_idle",
+    });
+    firefoxRegistrations.set(id, registration);
+    if (refreshOpenTabs) await refreshInstanceTabs(origin);
+    return;
+  }
+  if (!chrome.scripting?.registerContentScripts) return;
   const existing = await chrome.scripting.getRegisteredContentScripts({
     ids: [id],
   });
@@ -143,10 +185,15 @@ async function registerInstance(origin: string, refreshOpenTabs = false) {
 }
 
 async function unregisterInstance(origin: string) {
-  if (!chrome.scripting?.unregisterContentScripts) return;
-  await chrome.scripting.unregisterContentScripts({
-    ids: [instanceScriptId(origin)],
-  });
+  const id = instanceScriptId(origin);
+  const registration = firefoxRegistrations.get(id);
+  if (registration) {
+    registration.unregister();
+    firefoxRegistrations.delete(id);
+  }
+  if (chrome.scripting?.unregisterContentScripts) {
+    await chrome.scripting.unregisterContentScripts({ ids: [id] });
+  }
   await refreshInstanceTabs(origin);
 }
 

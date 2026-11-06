@@ -37,4 +37,29 @@ npm run dev
 npm run dev -- --browser=firefox
 ```
 
-Run the fetch bridge regression checks with `npm test` (Node 22.18 or newer).
+Run the TypeScript check with `npm run check` (Node 22.18 or newer).
+
+## CI and releases
+
+Pull requests run the TypeScript check and build, package, and inspect the Chrome,
+Firefox, and Edge extensions. A push to `main` repeats those checks, then submits
+the same ZIP files to the three browser stores. Update both `package.json` and
+`src/manifest.json` to a new version before merging a release; stores reject a
+version that has already been submitted.
+
+Create a GitHub Actions `production` environment with these secrets before the
+first deployment:
+
+| Store | Secrets |
+| --- | --- |
+| Chrome Web Store | `CHROME_CLIENT_ID`, `CHROME_CLIENT_SECRET`, `CHROME_REFRESH_TOKEN`, `CHROME_PUBLISHER_ID`, `CHROME_EXTENSION_ID` |
+| Firefox Add-ons | `FIREFOX_API_KEY`, `FIREFOX_API_SECRET` |
+| Edge Add-ons | `EDGE_API_KEY`, `EDGE_CLIENT_ID`, `EDGE_PRODUCT_ID` |
+
+See the [publisher action's store setup guide](https://github.com/creeperkatze/extension-publish#-store-setup)
+for where to obtain each credential.
+
+The stores also need existing listings and their one-time dashboard setup. The
+Firefox add-on ID is already set in the manifest. Store submission starts review;
+the stores decide when an update becomes available to users. Keep the reviewer
+information in [STORE.md](STORE.md) current for each release.

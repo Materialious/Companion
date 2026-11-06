@@ -1,0 +1,104 @@
+name: Extensions
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: extensions-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.number }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+      - id: version
+        run: echo "number=$(node -p 'require("./package.json").version')" >> "$GITHUB_OUTPUT"
+      - name: Build and check browser packages
+        run: |
+          for browser in chrome firefox edge; do
+            npm run "build:$browser" -- --zip
+            archive="dist/companion-$(node -p 'require("./package.json").version')-$browser.zip"
+            test -f "$archive"
+            unzip -t "$archive" >/dev/null
+            BROWSER="$browser" ARCHIVE="$archive" node --input-type=module <<'NODE'
+          import { execFileSync } from 'node:child_process'
+          import assert from 'node:assert/strict'
+
+          const archive = process.env.ARCHIVE
+          const browser = process.env.BROWSER
+          const manifest = JSON.parse(execFileSync('unzip', ['-p', archive, 'manifest.json'], { encoding: 'utf8' }))
+          const files = new Set(execFileSync('unzip', ['-Z1', archive], { encoding: 'utf8' }).trim().split('\n'))
+          assert.equal(manifest.version, JSON.parse(execFileSync('cat', ['package.json'], { encoding: 'utf8' })).version)
+          assert.equal(manifest.manifest_version, browser === 'firefox' ? 2 : 3)
+          assert(files.has('page/bridge.js'))
+          assert(files.has('action/index.html'))
+          assert(files.has(browser === 'firefox' ? 'background/scripts.js' : 'background/service_worker.js'))
+          NODE
+          done
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: github.event_name == 'push'
+        with:
+          name: extension-packages
+          path: dist/*.zip
+          if-no-files-found: error
+
+  deploy:
+    if: github.event_name == 'push'
+    needs: test
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: extension-packages
+          path: packages
+      - name: Check store credentials
+        env:
+          CHROME_CLIENT_ID: ${{ secrets.CHROME_CLIENT_ID }}
+          CHROME_CLIENT_SECRET: ${{ secrets.CHROME_CLIENT_SECRET }}
+          CHROME_REFRESH_TOKEN: ${{ secrets.CHROME_REFRESH_TOKEN }}
+          CHROME_PUBLISHER_ID: ${{ secrets.CHROME_PUBLISHER_ID }}
+          CHROME_EXTENSION_ID: ${{ secrets.CHROME_EXTENSION_ID }}
+          FIREFOX_API_KEY: ${{ secrets.FIREFOX_API_KEY }}
+          FIREFOX_API_SECRET: ${{ secrets.FIREFOX_API_SECRET }}
+          EDGE_API_KEY: ${{ secrets.EDGE_API_KEY }}
+          EDGE_CLIENT_ID: ${{ secrets.EDGE_CLIENT_ID }}
+          EDGE_PRODUCT_ID: ${{ secrets.EDGE_PRODUCT_ID }}
+        run: |
+          for name in CHROME_CLIENT_ID CHROME_CLIENT_SECRET CHROME_REFRESH_TOKEN CHROME_PUBLISHER_ID CHROME_EXTENSION_ID FIREFOX_API_KEY FIREFOX_API_SECRET EDGE_API_KEY EDGE_CLIENT_ID EDGE_PRODUCT_ID; do
+            if [[ -z "${!name}" ]]; then
+              echo "Missing production secret: $name" >&2
+              exit 1
+            fi
+          done
+      - uses: creeperkatze/extension-publish@028ffd6a9a3a71e8c6bb876693e4b8cee85a502c # v1
+        with:
+          chrome-client-id: ${{ secrets.CHROME_CLIENT_ID }}
+          chrome-client-secret: ${{ secrets.CHROME_CLIENT_SECRET }}
+          chrome-refresh-token: ${{ secrets.CHROME_REFRESH_TOKEN }}
+          chrome-publisher-id: ${{ secrets.CHROME_PUBLISHER_ID }}
+          chrome-extension-id: ${{ secrets.CHROME_EXTENSION_ID }}
+          chrome-zip-path: packages/companion-${{ needs.test.outputs.version }}-chrome.zip
+          firefox-api-key: ${{ secrets.FIREFOX_API_KEY }}
+          firefox-api-secret: ${{ secrets.FIREFOX_API_SECRET }}
+          firefox-extension-id: '{236132f6-b60c-4b13-9069-298b392cbc92}'
+          firefox-xpi-path: packages/companion-${{ needs.test.outputs.version }}-firefox.zip
+          firefox-license: mit
+          edge-api-key: ${{ secrets.EDGE_API_KEY }}
+          edge-client-id: ${{ secrets.EDGE_CLIENT_ID }}
+          edge-product-id: ${{ secrets.EDGE_PRODUCT_ID }}
+          edge-zip-path: packages/companion-${{ needs.test.outputs.version }}-edge.zip
