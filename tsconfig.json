@@ -16,6 +16,7 @@
     "resolveJsonModule": true,
     "strict": true,
     "target": "esnext",
+    "types": ["extension/types", "extension/types/polyfill"],
     "verbatimModuleSyntax": false,
     "useDefineForClassFields": true,
     "skipLibCheck": true
