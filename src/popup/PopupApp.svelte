@@ -29,15 +29,34 @@ function normalizeInstance(value: string): string | undefined {
   } catch { return }
 }
 
-function persist(next: string[]) {
+function persist(next: string[]): Promise<void> {
   saving = true
-  chrome.storage.local.set({materialiousInstances: next}, () => {
+  // Svelte state arrays are proxies; pass Chrome storage a plain structured
+  // clone so serialization cannot silently fail when settings are saved.
+  const savedInstances = Array.from(next)
+  return new Promise((resolve, reject) => chrome.storage.local.set({materialiousInstances: savedInstances}, () => {
     saving = false
-    if (chrome.runtime.lastError) error = chrome.runtime.lastError.message || 'Could not save settings'
+    if (chrome.runtime.lastError) {
+      error = chrome.runtime.lastError.message || 'Could not save settings'
+      reject(new Error(error))
+    } else resolve()
+  }))
+}
+
+function originPermissionPattern(instance: string): string {
+  const url = new URL(instance)
+  // Match patterns do not include ports; the content script checks the exact
+  // configured origin before exposing the bridge.
+  return `${url.protocol}//${url.hostname}/*`
+}
+
+function requestOriginPermission(origin: string): Promise<boolean> {
+  return new Promise((resolve) => {
+    chrome.permissions.request({origins: [originPermissionPattern(origin)]}, resolve)
   })
 }
 
-function addInstance(event: SubmitEvent) {
+async function addInstance(event: SubmitEvent) {
   event.preventDefault()
   error = ''
   const instance = normalizeInstance(instanceInput)
@@ -45,13 +64,62 @@ function addInstance(event: SubmitEvent) {
   if (instances.includes(instance)) { error = 'That instance is already in your list.'; return }
   instances = [...instances, instance]
   instanceInput = ''
-  persist(instances)
+  const savePromise = persist(instances)
+  // Start the permission request in the original click handler so Chrome still
+  // recognizes the user gesture. Both operations begin before yielding.
+  let permissionPromise: Promise<boolean>
+  try {
+    permissionPromise = requestOriginPermission(instance)
+  } catch {
+    await savePromise
+    instances = instances.filter((item) => item !== instance)
+    await persist(instances)
+    error = 'Could not request permission for this instance.'
+    return
+  }
+  try {
+    // Chrome may close the popup while showing the prompt, so start saving
+    // before requesting permission and wait for the write before continuing.
+    await savePromise
+  } catch {
+    instances = instances.filter((item) => item !== instance)
+    return
+  }
+  saving = true
+  let granted = false
+  try {
+    granted = await permissionPromise
+  } catch {
+    error = 'Could not request permission for this instance.'
+  }
+  saving = false
+  if (!granted) {
+    if (!error) error = 'Permission was not granted, so this instance was not added.'
+    instances = instances.filter((item) => item !== instance)
+    await persist(instances)
+    return
+  }
+  chrome.runtime.sendMessage(
+    {type: 'registerMaterialiousInstance', origin: instance},
+    (result) => {
+      if (chrome.runtime.lastError || !result?.ok) {
+        error = chrome.runtime.lastError?.message || result?.error || 'Could not activate this instance. Reload the extension and try again.'
+      }
+    }
+  )
 }
 
 function removeInstance(instance: string) {
   if (instance === DEFAULT_INSTANCE) return
   instances = instances.filter((item) => item !== instance)
   persist(instances)
+  const permissionPattern = originPermissionPattern(instance)
+  const stillUsed = instances.some((saved) => originPermissionPattern(saved) === permissionPattern)
+  chrome.runtime.sendMessage({
+    type: 'unregisterMaterialiousInstance',
+    origin: instance,
+    revokePermission: !stillUsed
+  })
 }
 </script>
 

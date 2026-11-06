@@ -46,14 +46,33 @@
   },
   "chromium:permissions": [
     "tabs",
-    "storage"
+    "storage",
+    "scripting",
+    "declarativeNetRequest"
   ],
   "firefox:permissions": [
     "tabs",
     "storage",
-    "<all_urls>"
+    "https://app.materialio.us/*",
+    "https://youtube.com/*",
+    "https://*.youtube.com/*",
+    "https://youtubei.googleapis.com/*",
+    "https://*.googlevideo.com/*",
+    "https://*.ytimg.com/*"
   ],
-  "chromium:host_permissions": ["<all_urls>"],
+  "chromium:host_permissions": [
+    "https://app.materialio.us/*",
+    "https://youtube.com/*",
+    "https://*.youtube.com/*",
+    "https://youtubei.googleapis.com/*",
+    "https://*.googlevideo.com/*",
+    "https://*.ytimg.com/*"
+  ],
+  "chromium:optional_host_permissions": ["http://*/*", "https://*/*"],
+  "chromium:content_security_policy": {
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self';"
+  },
+  "firefox:optional_permissions": ["http://*/*", "https://*/*"],
   "background": {
     "chromium:service_worker": "background.ts",
     "firefox:scripts": [
@@ -63,7 +82,7 @@
   "content_scripts": [
     {
       "matches": [
-        "<all_urls>"
+        "https://app.materialio.us/*"
       ],
       "js": [
         "content/scripts.ts"
