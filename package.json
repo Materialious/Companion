@@ -1,8 +1,8 @@
 {
   "private": true,
   "name": "Companion",
-  "description": "Adds a sidebar panel to the browser with a simple Svelte page.",
-  "version": "1.0.0",
+  "description": "Materialious' browser companion for local playback.",
+  "version": "0.0.1",
   "license": "MIT",
   "type": "module",
   "dependencies": {

@@ -29,7 +29,7 @@ jobs:
         run: echo "number=$(node -p 'require("./package.json").version')" >> "$GITHUB_OUTPUT"
       - name: Build and check browser packages
         run: |
-          for browser in chrome firefox edge; do
+          for browser in chrome firefox; do
             npm run "build:$browser" -- --zip
             archive="dist/companion-$(node -p 'require("./package.json").version')-$browser.zip"
             test -f "$archive"
@@ -75,11 +75,8 @@ jobs:
           CHROME_EXTENSION_ID: ${{ secrets.CHROME_EXTENSION_ID }}
           FIREFOX_API_KEY: ${{ secrets.FIREFOX_API_KEY }}
           FIREFOX_API_SECRET: ${{ secrets.FIREFOX_API_SECRET }}
-          EDGE_API_KEY: ${{ secrets.EDGE_API_KEY }}
-          EDGE_CLIENT_ID: ${{ secrets.EDGE_CLIENT_ID }}
-          EDGE_PRODUCT_ID: ${{ secrets.EDGE_PRODUCT_ID }}
         run: |
-          for name in CHROME_CLIENT_ID CHROME_CLIENT_SECRET CHROME_REFRESH_TOKEN CHROME_PUBLISHER_ID CHROME_EXTENSION_ID FIREFOX_API_KEY FIREFOX_API_SECRET EDGE_API_KEY EDGE_CLIENT_ID EDGE_PRODUCT_ID; do
+          for name in CHROME_CLIENT_ID CHROME_CLIENT_SECRET CHROME_REFRESH_TOKEN CHROME_PUBLISHER_ID CHROME_EXTENSION_ID FIREFOX_API_KEY FIREFOX_API_SECRET; do
             if [[ -z "${!name}" ]]; then
               echo "Missing production secret: $name" >&2
               exit 1
@@ -98,7 +95,3 @@ jobs:
           firefox-extension-id: '{236132f6-b60c-4b13-9069-298b392cbc92}'
           firefox-xpi-path: packages/companion-${{ needs.test.outputs.version }}-firefox.zip
           firefox-license: mit
-          edge-api-key: ${{ secrets.EDGE_API_KEY }}
-          edge-client-id: ${{ secrets.EDGE_CLIENT_ID }}
-          edge-product-id: ${{ secrets.EDGE_PRODUCT_ID }}
-          edge-zip-path: packages/companion-${{ needs.test.outputs.version }}-edge.zip

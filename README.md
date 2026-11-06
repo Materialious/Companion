@@ -50,11 +50,11 @@ version that has already been submitted.
 Create a GitHub Actions `production` environment with these secrets before the
 first deployment:
 
-| Store | Secrets |
-| --- | --- |
+| Store            | Secrets                                                                                                          |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------- |
 | Chrome Web Store | `CHROME_CLIENT_ID`, `CHROME_CLIENT_SECRET`, `CHROME_REFRESH_TOKEN`, `CHROME_PUBLISHER_ID`, `CHROME_EXTENSION_ID` |
-| Firefox Add-ons | `FIREFOX_API_KEY`, `FIREFOX_API_SECRET` |
-| Edge Add-ons | `EDGE_API_KEY`, `EDGE_CLIENT_ID`, `EDGE_PRODUCT_ID` |
+| Firefox Add-ons  | `FIREFOX_API_KEY`, `FIREFOX_API_SECRET`                                                                          |
+| Edge Add-ons     | `EDGE_API_KEY`, `EDGE_CLIENT_ID`, `EDGE_PRODUCT_ID`                                                              |
 
 See the [publisher action's store setup guide](https://github.com/creeperkatze/extension-publish#-store-setup)
 for where to obtain each credential.
