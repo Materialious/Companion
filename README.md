@@ -23,12 +23,15 @@ npm run build
 npm run build:firefox
 ```
 
-The extension has access to the default Materialious site and asks for
-permission per additional instance when you add it. Chromium registers a
-content script for that instance after permission is granted. YouTube API and
-media hosts are also permitted for the request bridge. Browser-managed headers
+The extension requests access to all HTTP and HTTPS hosts so the request bridge
+can reach any Invidious instance, YouTube API, or media server. The bridge
+activates only on the Materialious sites configured in the popup. Chromium
+registers a content script when you add a Materialious instance. Browser-managed headers
 and cookies are omitted; other YouTube.js request headers, including
 `Content-Type`, are forwarded.
+
+After updating an existing installation, reload the extension and approve the
+expanded site access if the browser prompts, then reload Materialious.
 
 ## Development
 

@@ -207,12 +207,9 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   }
   if (message?.type === "unregisterMaterialiousInstance") {
     unregisterInstance(message.origin).then(
-      async () => {
-        if (message.revokePermission) {
-          await chrome.permissions.remove({
-            origins: [instanceMatchPattern(message.origin)],
-          });
-        }
+      () => {
+        // Host access is required for the request bridge. Removing an instance
+        // only disables its content script; required permissions cannot be revoked.
         sendResponse({ ok: true });
       },
       (error) => sendResponse({ ok: false, error: String(error) }),

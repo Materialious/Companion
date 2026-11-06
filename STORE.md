@@ -94,6 +94,9 @@ the extension to work" fails review on every store. -->
 - sidePanel: Renders the extension's main interface in the browser side
   panel. Requested on Chromium only.
 - tabs: TODO reason
+- Host permissions http://*/* and https://*/*: Allows the request bridge to
+  reach user-selected Invidious instances and their media servers. These can
+  use any hostname. The bridge activates only on configured Materialious sites.
 - Content script match <all_urls>: The content script runs on the pages the
   user visits to render the extension's on-page interface. Narrow this to
   the specific sites your extension needs before submitting.

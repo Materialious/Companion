@@ -51,26 +51,16 @@
   "firefox:permissions": [
     "tabs",
     "storage",
-    "https://app.materialio.us/*",
-    "https://youtube.com/*",
-    "https://*.youtube.com/*",
-    "https://youtubei.googleapis.com/*",
-    "https://*.googlevideo.com/*",
-    "https://*.ytimg.com/*"
+    "http://*/*",
+    "https://*/*"
   ],
   "chromium:host_permissions": [
-    "https://app.materialio.us/*",
-    "https://youtube.com/*",
-    "https://*.youtube.com/*",
-    "https://youtubei.googleapis.com/*",
-    "https://*.googlevideo.com/*",
-    "https://*.ytimg.com/*"
+    "http://*/*",
+    "https://*/*"
   ],
-  "chromium:optional_host_permissions": ["http://*/*", "https://*/*"],
   "chromium:content_security_policy": {
     "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self';"
   },
-  "firefox:optional_permissions": ["http://*/*", "https://*/*"],
   "background": {
     "chromium:service_worker": "background.ts",
     "firefox:scripts": ["background.ts"]
