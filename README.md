@@ -37,12 +37,4 @@ npm run dev
 npm run dev -- --browser=firefox
 ```
 
-## Current scope
-
-Companion fetch preserves the method and application request headers, decodes
-bodies marked with `__is_base64_encoded`, omits cookies, and uses a 10-second
-timeout. Responses preserve
-status, headers, and body, but are buffered in memory. Very large media
-segments may use more memory than a streaming proxy. Browser-managed headers
-such as `Host`, `Origin`, and `User-Agent` cannot be set by extension fetch, and
-XHR still uses Materialious' configured proxy.
+Run the fetch bridge regression checks with `npm test` (Node 22.18 or newer).

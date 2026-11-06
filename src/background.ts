@@ -20,6 +20,9 @@ function asArrayBuffer(bytes: Uint8Array): ArrayBuffer {
 }
 
 function decodeBase64(value: string): Uint8Array {
+  if (typeof value !== "string") {
+    throw new TypeError("Companion request body must be a base64 string");
+  }
   const normalized = value
     .replace(/\s/g, "")
     .replace(/-/g, "+")
@@ -56,22 +59,22 @@ async function addYouTubeHeaderRule(url: URL): Promise<number | undefined> {
     return undefined;
 
   const id = nextHeaderRuleId++;
-  chrome.declarativeNetRequest.updateSessionRules({
+  await chrome.declarativeNetRequest.updateSessionRules({
     addRules: [
       {
         id,
         priority: 1,
         action: {
-          type: "modifyHeaders",
+          type: chrome.declarativeNetRequest.RuleActionType.MODIFY_HEADERS,
           requestHeaders: [
             {
               header: "origin",
-              operation: "set",
+              operation: chrome.declarativeNetRequest.HeaderOperation.SET,
               value: "https://www.youtube.com",
             },
             {
               header: "referer",
-              operation: "set",
+              operation: chrome.declarativeNetRequest.HeaderOperation.SET,
               value: "https://www.youtube.com",
             },
           ],
@@ -86,7 +89,7 @@ async function addYouTubeHeaderRule(url: URL): Promise<number | undefined> {
             "ytimg.com",
             "ggpht.com",
           ],
-          resourceTypes: ["xmlhttprequest"],
+          resourceTypes: [chrome.declarativeNetRequest.ResourceType.XMLHTTPREQUEST],
         },
       },
     ],
@@ -215,14 +218,12 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       }
       const headers = new Headers(message.headers);
       await sodium.ready;
-      let body: BodyInit | undefined = message.bodyBase64
+      // The page bridge sends one base64 string, reusing Materialious' encoded
+      // body when marked. Decode only once before sending the original bytes.
+      const body: BodyInit | undefined = message.bodyBase64 !== undefined
         ? asArrayBuffer(decodeBase64(message.bodyBase64))
         : undefined;
-      if (headers.has("__is_base64_encoded")) {
-        headers.delete("__is_base64_encoded");
-        if (!body) throw new Error("Expected a base64 encoded request body");
-        body = asArrayBuffer(decodeBase64(new TextDecoder().decode(body)));
-      }
+      headers.delete("__is_base64_encoded");
       // Keep YouTube.js's request headers intact. Fetch controls browser-managed
       // headers such as Host, Origin, Referer, User-Agent, Cookie, and
       // Content-Length; removing Content-Type here breaks YouTube's JSON API
