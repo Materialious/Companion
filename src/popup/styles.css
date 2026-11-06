@@ -1,2 +1,218 @@
-:root{font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;color:#202124;background:#f5f4f8;font-synthesis:none}*{box-sizing:border-box}body{margin:0;width:370px;min-height:300px}.popup{padding:18px}.topbar{display:flex;align-items:center;gap:12px;margin:0 2px 16px}.topbar img{width:48px;height:42px;object-fit:contain}.topbar h1{font-size:16px;line-height:1.25;margin:0;font-weight:650;letter-spacing:-.2px}.topbar p{margin:3px 0 0;color:#686771;font-size:12px}.card{background:#fff;border:1px solid #e9e7ee;border-radius:20px;padding:17px 16px 16px;box-shadow:0 2px 7px #25203a0a}.section-heading h2{font-size:14px;margin:0;font-weight:650}.section-heading p{font-size:12px;color:#777580;margin:4px 0 12px}.instance-list{list-style:none;margin:0 0 16px;padding:0}.instance-list li{min-height:42px;display:flex;align-items:center;gap:9px;border-top:1px solid #f0eff3;padding:7px 0}.status-dot{width:8px;height:8px;background:#388a63;border-radius:50%;flex:none}.instance-url{font-size:12px;overflow-wrap:anywhere;flex:1}.default-tag{font-size:10px;color:#53516a;background:#efedf7;padding:4px 8px;border-radius:999px}.icon-button{border:0;background:transparent;color:#777580;font-size:20px;line-height:1;cursor:pointer;border-radius:50%;width:27px;height:27px}.icon-button:hover{background:#f1eff5;color:#262431}form label{display:block;font-size:12px;font-weight:600;margin-bottom:7px}.input-row{display:flex;gap:8px}input{height:38px;min-width:0;flex:1;border:1px solid #d9d7e0;border-radius:12px;padding:0 11px;font:inherit;font-size:12px;outline:none}input:focus{border-color:#625b88;box-shadow:0 0 0 3px #625b881c}.add-button{border:0;border-radius:999px;background:#625b88;color:white;font:inherit;font-size:12px;font-weight:600;padding:0 16px;cursor:pointer}.add-button:hover{background:#4f496f}.add-button:disabled{opacity:.6}.error{font-size:11px;color:#b3261e;margin:8px 0 0}footer{font-size:10px;line-height:1.5;color:#777580;padding:12px 4px 0}
-@media(prefers-color-scheme:dark){:root{color:#f2eff7;background:#17151d}body{background:#17151d}.topbar p,.section-heading p,footer{color:#b9b5c2}.card{background:#24212b;border-color:#393541;box-shadow:0 2px 8px #0003}.instance-list li{border-color:#393541}.instance-url{color:#f2eff7}.default-tag{color:#e4def8;background:#393347}.icon-button{color:#c6c1ce}.icon-button:hover{background:#393541;color:#fff}input{background:#1d1a23;border-color:#4a4552;color:#f2eff7}input::placeholder{color:#aaa5b2}input:focus{border-color:#c9b9ff;box-shadow:0 0 0 3px #c9b9ff24}.add-button{background:#d2c3ff;color:#251a3b}.add-button:hover{background:#e1d7ff}}
+:root {
+    font-family:
+        Inter,
+        ui-sans-serif,
+        system-ui,
+        -apple-system,
+        "Segoe UI",
+        sans-serif;
+    color: #202124;
+    background: #f5f4f8;
+    font-synthesis: none;
+}
+* {
+    box-sizing: border-box;
+}
+body {
+    margin: 0;
+    width: 370px;
+    min-height: 300px;
+}
+.popup {
+    padding: 18px;
+}
+.topbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 0 2px 16px;
+}
+.topbar img {
+    width: 48px;
+    height: 42px;
+    object-fit: contain;
+}
+.topbar h1 {
+    font-size: 16px;
+    line-height: 1.25;
+    margin: 0;
+    font-weight: 650;
+    letter-spacing: -0.2px;
+}
+.topbar p {
+    margin: 3px 0 0;
+    color: #686771;
+    font-size: 12px;
+}
+.card {
+    background: #fff;
+    border: 1px solid #e9e7ee;
+    border-radius: 20px;
+    padding: 17px 16px 16px;
+    box-shadow: 0 2px 7px #25203a0a;
+}
+.section-heading h2 {
+    font-size: 14px;
+    margin: 0;
+    font-weight: 650;
+}
+.section-heading p {
+    font-size: 12px;
+    color: #777580;
+    margin: 4px 0 12px;
+}
+.instance-list {
+    list-style: none;
+    margin: 0 0 16px;
+    padding: 0;
+}
+.instance-list li {
+    min-height: 42px;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    border-top: 1px solid #f0eff3;
+    padding: 7px 0;
+}
+.status-dot {
+    width: 8px;
+    height: 8px;
+    background: #388a63;
+    border-radius: 50%;
+    flex: none;
+}
+.instance-url {
+    font-size: 12px;
+    overflow-wrap: anywhere;
+    flex: 1;
+}
+.default-tag {
+    font-size: 10px;
+    color: #53516a;
+    background: #efedf7;
+    padding: 4px 8px;
+    border-radius: 999px;
+}
+.icon-button {
+    border: 0;
+    background: transparent;
+    color: #777580;
+    font-size: 20px;
+    line-height: 1;
+    cursor: pointer;
+    border-radius: 50%;
+    width: 27px;
+    height: 27px;
+}
+.icon-button:hover {
+    background: #f1eff5;
+    color: #262431;
+}
+form label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    margin-bottom: 7px;
+}
+.input-row {
+    display: flex;
+    gap: 8px;
+}
+input {
+    height: 38px;
+    min-width: 0;
+    flex: 1;
+    border: 1px solid #d9d7e0;
+    border-radius: 12px;
+    padding: 0 11px;
+    font: inherit;
+    font-size: 12px;
+    outline: none;
+}
+input:focus {
+    border-color: #625b88;
+    box-shadow: 0 0 0 3px #625b881c;
+}
+.add-button {
+    border: 0;
+    border-radius: 999px;
+    background: #625b88;
+    color: white;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 0 16px;
+    cursor: pointer;
+}
+.add-button:hover {
+    background: #4f496f;
+}
+.add-button:disabled {
+    opacity: 0.6;
+}
+.error {
+    font-size: 11px;
+    color: #b3261e;
+    margin: 8px 0 0;
+}
+footer {
+    font-size: 10px;
+    line-height: 1.5;
+    color: #777580;
+    padding: 12px 4px 0;
+}
+@media (prefers-color-scheme: dark) {
+    :root {
+        color: #f2eff7;
+        background: #17151d;
+    }
+    body {
+        background: #17151d;
+    }
+    .topbar p,
+    .section-heading p,
+    footer {
+        color: #b9b5c2;
+    }
+    .card {
+        background: #24212b;
+        border-color: #393541;
+        box-shadow: 0 2px 8px #0003;
+    }
+    .instance-list li {
+        border-color: #393541;
+    }
+    .instance-url {
+        color: #f2eff7;
+    }
+    .default-tag {
+        color: #e4def8;
+        background: #393347;
+    }
+    .icon-button {
+        color: #c6c1ce;
+    }
+    .icon-button:hover {
+        background: #393541;
+        color: #fff;
+    }
+    input {
+        background: #1d1a23;
+        border-color: #4a4552;
+        color: #f2eff7;
+    }
+    input::placeholder {
+        color: #aaa5b2;
+    }
+    input:focus {
+        border-color: #c9b9ff;
+        box-shadow: 0 0 0 3px #c9b9ff24;
+    }
+    .add-button {
+        background: #d2c3ff;
+        color: #251a3b;
+    }
+    .add-button:hover {
+        background: #e1d7ff;
+    }
+}

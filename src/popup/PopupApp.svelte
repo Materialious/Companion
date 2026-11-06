@@ -67,16 +67,7 @@ async function addInstance(event: SubmitEvent) {
   const savePromise = persist(instances)
   // Start the permission request in the original click handler so Chrome still
   // recognizes the user gesture. Both operations begin before yielding.
-  let permissionPromise: Promise<boolean>
-  try {
-    permissionPromise = requestOriginPermission(instance)
-  } catch {
-    await savePromise
-    instances = instances.filter((item) => item !== instance)
-    await persist(instances)
-    error = 'Could not request permission for this instance.'
-    return
-  }
+  const permissionPromise = requestOriginPermission(instance)
   try {
     // Chrome may close the popup while showing the prompt, so start saving
     // before requesting permission and wait for the write before continuing.
