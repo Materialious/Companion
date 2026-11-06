@@ -14,7 +14,7 @@
     }
   },
   "name": "Companion",
-  "description": "Adds a sidebar panel to the browser with a simple Svelte page.",
+  "description": "Adds a browser request bridge for Materialious.",
   "icons": {
     "16": "images/icon-16.png",
     "32": "images/icon-32.png",
@@ -23,6 +23,7 @@
     "128": "images/icon-128.png"
   },
   "chromium:action": {
+    "default_popup": "popup/index.html",
     "default_icon": {
       "16": "images/icon-16.png",
       "32": "images/icon-32.png",
@@ -30,9 +31,10 @@
       "64": "images/icon-64.png",
       "128": "images/icon-128.png"
     },
-    "default_title": "Open Side Panel"
+    "default_title": "Materialious Companion"
   },
   "firefox:browser_action": {
+    "default_popup": "popup/index.html",
     "default_icon": {
       "16": "images/icon-16.png",
       "32": "images/icon-32.png",
@@ -40,24 +42,18 @@
       "64": "images/icon-64.png",
       "128": "images/icon-128.png"
     },
-    "default_title": "Open Side Panel"
-  },
-  "chromium:side_panel": {
-    "default_path": "sidebar/index.html",
-    "default_title": "Side Panel Content"
-  },
-  "firefox:sidebar_action": {
-    "default_panel": "sidebar/index.html",
-    "default_title": "Side Panel Content",
-    "browser_style": false
+    "default_title": "Materialious Companion"
   },
   "chromium:permissions": [
-    "sidePanel",
-    "tabs"
+    "tabs",
+    "storage"
   ],
   "firefox:permissions": [
-    "tabs"
+    "tabs",
+    "storage",
+    "<all_urls>"
   ],
+  "chromium:host_permissions": ["<all_urls>"],
   "background": {
     "chromium:service_worker": "background.ts",
     "firefox:scripts": [
@@ -73,5 +69,12 @@
         "content/scripts.ts"
       ]
     }
-  ]
+  ],
+  "chromium:web_accessible_resources": [
+    {
+      "resources": ["page/bridge.js"],
+      "matches": ["<all_urls>"]
+    }
+  ],
+  "firefox:web_accessible_resources": ["page/bridge.js"]
 }

@@ -15,6 +15,32 @@ console.log('[From the page context] Hello from content_scripts!')
  * Do not invoke it yourself.
  */
 export default function initial() {
+  const relay = (event: MessageEvent) => {
+    if (event.source !== window || event.data?.channel !== 'materialious-companion') return
+    chrome.runtime.sendMessage(event.data.request, (reply) => {
+      window.postMessage({
+        channel: 'materialious-companion-response',
+        id: event.data.id,
+        reply: chrome.runtime.lastError ? {ok: false, error: chrome.runtime.lastError.message} : reply
+      }, '*')
+    })
+  }
+  window.addEventListener('message', relay)
+
+  const activateBridge = () => {
+    const bridge = document.createElement('script')
+    bridge.src = chrome.runtime.getURL('page/bridge.js')
+    bridge.onload = () => bridge.remove()
+    ;(document.documentElement || document.head).appendChild(bridge)
+  }
+
+  chrome.storage.local.get({materialiousInstances: ['https://app.materialio.us']}, (settings) => {
+    const currentOrigin = location.origin
+    const allowed = (settings.materialiousInstances as string[]).some((instance) => {
+      try { return new URL(instance).origin === currentOrigin } catch { return false }
+    })
+    if (allowed) activateBridge()
+  })
   const rootDiv = document.createElement('div')
   rootDiv.setAttribute('data-extension-root', 'true')
   // Isolate the host from page styles (e.g. example.com ships div{opacity:.8},
@@ -48,6 +74,7 @@ export default function initial() {
   chrome.runtime.onMessage.addListener(answerPageTitle)
 
   return () => {
+    window.removeEventListener('message', relay)
     chrome.runtime.onMessage.removeListener(answerPageTitle)
     rootDiv.remove()
   }

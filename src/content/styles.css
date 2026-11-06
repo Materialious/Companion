@@ -28,11 +28,7 @@
 
 .content_pill_logo {
   height: 1.5rem;
-  border-radius: 9999px;
-  background: rgba(255, 255, 255, 0.08);
   object-fit: contain;
-  aspect-ratio: 1 / 1;
-  padding: 0.125rem;
 }
 
 .content_pill_text {
