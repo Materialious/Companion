@@ -2,7 +2,7 @@
   "$schema": "https://json.schemastore.org/chrome-manifest.json",
   "chromium:manifest_version": 3,
   "firefox:manifest_version": 2,
-  "version": "0.0.1",
+  "version": "0.0.2",
   "firefox:browser_specific_settings": {
     "gecko": {
       "id": "{236132f6-b60c-4b13-9069-298b392cbc92}",
@@ -48,16 +48,8 @@
     "scripting",
     "declarativeNetRequest"
   ],
-  "firefox:permissions": [
-    "tabs",
-    "storage",
-    "http://*/*",
-    "https://*/*"
-  ],
-  "chromium:host_permissions": [
-    "http://*/*",
-    "https://*/*"
-  ],
+  "firefox:permissions": ["tabs", "storage", "http://*/*", "https://*/*"],
+  "chromium:host_permissions": ["http://*/*", "https://*/*"],
   "chromium:content_security_policy": {
     "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self';"
   },
