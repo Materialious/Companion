@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <title>Materialious Companion</title>
+  <!-- Render each manifest size with: rsvg-convert -w SIZE -h SIZE icon.svg -o icon-SIZE.png -->
+  <!-- A light edge separates the purple badge from dark browser toolbars. -->
+  <rect x="4" y="4" width="120" height="120" rx="28" fill="#8a3ba5" stroke="#bd85d0" stroke-width="2"/>
+  <svg x="17" y="26" width="94" height="76" viewBox="50.17 104.37 109.67 88.27">
+    <g fill="#fff" transform="matrix(1.0140222,0,0,1.0140222,-1.4722742,-56.323482)">
+      <g transform="matrix(-1,0,0,1,201.63735,-0.0000074456246)">
+        <path d="m 114.65661,173.40906 -1.29294,4.82606 h -5.2e-4 l -44.404523,11.89798 32.504993,32.50551 10e-4,0.001 -6.12107,22.84563 -26.381853,-26.38185 -26.381335,-26.38134 36.03811,-9.65625 z m -4.28191,15.97939 -5.37486,20.05872 -0.54622,2.03915 -16.176276,-16.17679 z"/>
+        <path d="M 131.38171,245.48534 105,219.10365 l -26.381696,-26.3817 36.038076,-9.65637 36.03807,-9.65638 -9.65637,36.03807 z"/>
+      </g>
+      <circle cx="86.980743" cy="163.40662" r="4.9097047"/>
+    </g>
+  </svg>
+</svg>

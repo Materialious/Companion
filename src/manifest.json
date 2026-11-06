@@ -2,18 +2,16 @@
   "$schema": "https://json.schemastore.org/chrome-manifest.json",
   "chromium:manifest_version": 3,
   "firefox:manifest_version": 2,
-  "version": "1.0.0",
+  "version": "0.0.1",
   "firefox:browser_specific_settings": {
     "gecko": {
       "id": "{236132f6-b60c-4b13-9069-298b392cbc92}",
       "data_collection_permissions": {
-        "required": [
-          "none"
-        ]
+        "required": ["none"]
       }
     }
   },
-  "name": "Companion",
+  "name": "Materialious Companion",
   "description": "Adds a browser request bridge for Materialious.",
   "icons": {
     "16": "images/icon-16.png",
@@ -75,18 +73,12 @@
   "firefox:optional_permissions": ["http://*/*", "https://*/*"],
   "background": {
     "chromium:service_worker": "background.ts",
-    "firefox:scripts": [
-      "background.ts"
-    ]
+    "firefox:scripts": ["background.ts"]
   },
   "content_scripts": [
     {
-      "matches": [
-        "https://app.materialio.us/*"
-      ],
-      "js": [
-        "content/scripts.ts"
-      ]
+      "matches": ["https://app.materialio.us/*"],
+      "js": ["content/scripts.ts"]
     }
   ],
   "chromium:web_accessible_resources": [
