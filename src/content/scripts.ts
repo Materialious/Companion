@@ -3,18 +3,22 @@
  * The toolbar popup is the only extension UI; this script adds no page UI.
  */
 export default function initial() {
+  const ports = new Map<number, chrome.runtime.Port>()
   const relay = (event: MessageEvent) => {
     if (event.source !== window || event.data?.channel !== 'materialious-companion') return
-
-    chrome.runtime.sendMessage(event.data.request, (reply) => {
-      window.postMessage({
-        channel: 'materialious-companion-response',
-        id: event.data.id,
-        reply: chrome.runtime.lastError
-          ? {ok: false, error: chrome.runtime.lastError.message}
-          : reply
-      }, '*')
-    })
+    const {id, request} = event.data
+    if (request.type === 'start') {
+      const port = chrome.runtime.connect({name: 'materialious-proxy-fetch'})
+      ports.set(id, port)
+      port.onMessage.addListener((reply) => window.postMessage({channel: 'materialious-companion-response', id, reply}, '*'))
+      port.onDisconnect.addListener(() => {
+        ports.delete(id)
+        window.postMessage({channel: 'materialious-companion-response', id, reply: {type: 'disconnect'}}, '*')
+      })
+      port.postMessage(request)
+    } else {
+      ports.get(id)?.postMessage(request)
+    }
   }
 
   window.addEventListener('message', relay)
@@ -31,5 +35,5 @@ export default function initial() {
     ;(document.documentElement || document.head).appendChild(bridge)
   })
 
-  return () => window.removeEventListener('message', relay)
+  return () => { window.removeEventListener('message', relay); ports.forEach((port) => port.disconnect()) }
 }

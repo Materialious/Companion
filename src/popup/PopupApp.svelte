@@ -95,7 +95,9 @@
         const savePromise = persist(instances);
         // Start the permission request in the original click handler so Chrome still
         // recognizes the user gesture. Both operations begin before yielding.
-        const permissionPromise = requestOriginPermission(instance);
+        const permissionPromise = chrome.runtime.getManifest().manifest_version === 2
+            ? Promise.resolve(true)
+            : requestOriginPermission(instance);
         try {
             // Chrome may close the popup while showing the prompt, so start saving
             // before requesting permission and wait for the write before continuing.
@@ -133,20 +135,27 @@
         );
     }
 
-    function removeInstance(instance: string) {
+    async function removeInstance(instance: string) {
         if (instance === DEFAULT_INSTANCE) return;
+        const previous = instances;
         instances = instances.filter((item) => item !== instance);
-        persist(instances);
-        const permissionPattern = originPermissionPattern(instance);
-        const stillUsed = instances.some(
-            (saved) => originPermissionPattern(saved) === permissionPattern,
+        try {
+            await persist(instances);
+        } catch {
+            instances = previous;
+            return;
+        }
+        chrome.runtime.sendMessage(
+            { type: "unregisterMaterialiousInstance", origin: instance },
+            (result) => {
+                if (chrome.runtime.lastError || !result?.ok) {
+                    error = chrome.runtime.lastError?.message || result?.error ||
+                        "Could not deactivate this instance.";
+                }
+            },
         );
-        chrome.runtime.sendMessage({
-            type: "unregisterMaterialiousInstance",
-            origin: instance,
-            revokePermission: !stillUsed,
-        });
     }
+
 </script>
 
 <main class="popup">

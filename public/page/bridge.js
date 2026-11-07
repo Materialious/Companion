@@ -30,38 +30,47 @@
     return Uint8Array.from(binary, (character) => character.charCodeAt(0))
       .buffer;
   };
+  const send = (id, request) => window.postMessage({
+    channel: "materialious-companion", id, request,
+  }, "*");
   window.addEventListener("message", (event) => {
-    if (
-      event.source !== window ||
-      event.data?.channel !== "materialious-companion-response"
-    )
-      return;
-    const resolve = pending.get(event.data.id);
-    if (!resolve) return;
-    pending.delete(event.data.id);
-    resolve(event.data.reply);
+    if (event.source !== window || event.data?.channel !== "materialious-companion-response") return;
+    pending.get(event.data.id)?.(event.data.reply);
   });
 
-  const request = (url, init = {}) =>
-    new Promise((resolve) => {
-      const id = ++nextId;
-      pending.set(id, resolve);
-      window.postMessage(
-        {
-          channel: "materialious-companion",
-          id,
-          request: {
-            type: "materialious-proxy-fetch",
-            url,
-            method: init.method || "GET",
-            headers: [...new Headers(init.headers || {}).entries()],
-            bodyBase64: init.bodyBase64,
-            redirect: init.redirect || "follow",
-          },
-        },
-        "*",
-      );
+  const request = (url, init, signal) => new Promise((resolve, reject) => {
+    const id = ++nextId;
+    let controller;
+    let settled = false;
+    let finished = false;
+    const cleanup = () => { pending.delete(id); signal.removeEventListener("abort", onAbort); };
+    const fail = (error) => {
+      if (finished) return;
+      finished = true;
+      cleanup();
+      if (settled) controller?.error(error); else reject(error);
+    };
+    const onAbort = () => { send(id, {type: "cancel"}); fail(signal.reason); };
+    pending.set(id, (reply) => {
+      if (reply.type === "headers") {
+        settled = true;
+        const body = reply.hasBody ? new ReadableStream({
+          start(c) { controller = c; },
+          pull() { send(id, {type: "pull"}); },
+          cancel() { finished = true; cleanup(); send(id, {type: "cancel"}); },
+        }) : null;
+        if (!body) { finished = true; cleanup(); }
+        resolve(new Response(body, {status: reply.status, statusText: reply.statusText, headers: reply.headers}));
+      } else if (reply.type === "chunk") controller.enqueue(new Uint8Array(decodeBytes(reply.data)));
+      else if (reply.type === "end") { finished = true; cleanup(); controller.close(); }
+      else if (reply.type === "error") fail(new TypeError(reply.error));
+      else if (reply.type === "disconnect") fail(new TypeError("Companion connection closed"));
     });
+    if (signal.aborted) { onAbort(); return; }
+    signal.addEventListener("abort", onAbort, {once: true});
+    send(id, {type: "start", url, method: init.method, headers: init.headers,
+      bodyBase64: init.bodyBase64, redirect: init.redirect});
+  });
 
   // Public opt-in API for Materialious. The app can detect the marker and use
   // this fetch-compatible function for CORS-sensitive requests.
@@ -77,22 +86,11 @@
         ? await requestInput.clone().text()
         : encodeBytes(await requestInput.clone().arrayBuffer());
     }
-    const reply = await request(requestInput.url, {
+    return request(requestInput.url, {
       method: requestInput.method,
       headers: [...headers.entries()],
       bodyBase64,
       redirect: requestInput.redirect,
-    });
-    if (!reply?.ok)
-      throw new TypeError(reply?.error || "Companion request failed");
-    const responseBody =
-      requestInput.method === "HEAD" || [204, 205, 304].includes(reply.status)
-        ? null
-        : decodeBytes(reply.bodyBase64);
-    return new Response(responseBody, {
-      status: reply.status,
-      statusText: reply.statusText,
-      headers: reply.headers,
-    });
+    }, requestInput.signal);
   };
 })();

@@ -122,7 +122,7 @@ async function refreshInstanceTabs(origin: string) {
   );
 }
 
-const firefoxRegistrations = new Map<string, { unregister: () => void }>();
+const firefoxRegistrations = new Map<string, { unregister: () => Promise<void> }>();
 const pendingRegistrations = new Map<string, Promise<void>>();
 
 async function registerInstance(origin: string, refreshOpenTabs = false) {
@@ -152,12 +152,12 @@ async function registerInstanceOnce(origin: string, refreshOpenTabs: boolean) {
           matches: string[];
           js: { file: string }[];
           runAt: string;
-        }) => Promise<{ unregister: () => void }>;
+        }) => Promise<{ unregister: () => Promise<void> }>;
       };
     };
   }).browser;
   if (firefox?.contentScripts?.register) {
-    firefoxRegistrations.get(id)?.unregister();
+    await firefoxRegistrations.get(id)?.unregister();
     const registration = await firefox.contentScripts.register({
       matches: [match],
       js: [{ file: "content/scripts.js" }],
@@ -186,9 +186,10 @@ async function registerInstanceOnce(origin: string, refreshOpenTabs: boolean) {
 
 async function unregisterInstance(origin: string) {
   const id = instanceScriptId(origin);
+  await pendingRegistrations.get(id);
   const registration = firefoxRegistrations.get(id);
   if (registration) {
-    registration.unregister();
+    await registration.unregister();
     firefoxRegistrations.delete(id);
   }
   if (chrome.scripting?.unregisterContentScripts) {
@@ -222,12 +223,15 @@ chrome.storage.local.get(
   { materialiousInstances: ["https://app.materialio.us"] },
   (settings) => {
     for (const origin of settings.materialiousInstances as string[]) {
-      const pattern = instanceMatchPattern(origin);
-      chrome.permissions.contains({ origins: [pattern] }, (granted) => {
-        if (granted && origin !== "https://app.materialio.us") {
-          registerInstance(origin).catch((error) => console.error(error));
-        }
-      });
+      if (origin === "https://app.materialio.us") continue;
+      if (chrome.runtime.getManifest().manifest_version === 2) {
+        registerInstance(origin).catch((error) => console.error(error));
+      } else {
+        const pattern = instanceMatchPattern(origin);
+        chrome.permissions.contains({ origins: [pattern] }, (granted) => {
+          if (granted) registerInstance(origin).catch((error) => console.error(error));
+        });
+      }
     }
   },
 );
@@ -251,10 +255,24 @@ chrome.permissions.onAdded.addListener((addedPermissions) => {
 
 // Materialious calls the page bridge's explicit fetch API. Extension-host
 // fetches are not subject to page CORS.
-chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
-  if (message?.type !== "materialious-proxy-fetch") return;
-
-  (async () => {
+chrome.runtime.onConnect.addListener((port) => {
+  if (port.name !== "materialious-proxy-fetch") return;
+  const abort = new AbortController();
+  let reader: ReadableStreamDefaultReader<Uint8Array> | undefined;
+  let closed = false;
+  port.onDisconnect.addListener(() => { closed = true; abort.abort(); reader?.cancel().catch(() => {}); });
+  port.onMessage.addListener((message) => {
+    if (message.type === "cancel") { abort.abort(); reader?.cancel().catch(() => {}); port.disconnect(); return; }
+    if (message.type === "pull") {
+      reader?.read().then(({done, value}) => {
+        if (closed) return;
+        if (done) { port.postMessage({type: "end"}); port.disconnect(); }
+        else port.postMessage({type: "chunk", data: sodium.to_base64(value)});
+      }).catch((error) => { if (!closed) { port.postMessage({type: "error", error: String(error)}); port.disconnect(); } });
+      return;
+    }
+    if (message.type !== "start") return;
+    (async () => {
     try {
       const target = new URL(message.url);
       if (target.protocol !== "https:" && target.protocol !== "http:") {
@@ -286,6 +304,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       // rejects some requests when these identify the extension or are absent.
       const headerRuleId = await addYouTubeHeaderRule(target);
       let response: Response;
+      const timeout = setTimeout(() => abort.abort(), 10000);
       try {
         response = await fetch(target.href, {
           method: message.method,
@@ -296,9 +315,10 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
               : body,
           credentials: "omit",
           redirect: message.redirect || "follow",
-          signal: AbortSignal.timeout(10000),
+          signal: abort.signal,
         });
       } finally {
+        clearTimeout(timeout);
         await removeHeaderRule(headerRuleId);
       }
       // fetch() may transparently decompress the response body. Do not forward
@@ -307,18 +327,15 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       const responseHeaders = new Headers(response.headers);
       responseHeaders.delete("content-encoding");
       responseHeaders.delete("content-length");
-      sendResponse({
-        ok: true,
-        status: response.status,
-        statusText: response.statusText,
-        headers: [...responseHeaders.entries()],
-        bodyBase64: sodium.to_base64(
-          new Uint8Array(await response.arrayBuffer()),
-        ),
+      reader = response.body?.getReader();
+      if (!closed) port.postMessage({
+        type: "headers", status: response.status, statusText: response.statusText,
+        headers: [...responseHeaders.entries()], hasBody: !!reader,
       });
+      if (!reader && !closed) port.disconnect();
     } catch (error) {
-      sendResponse({ ok: false, error: String(error) });
+      if (!closed) { port.postMessage({type: "error", error: String(error)}); port.disconnect(); }
     }
-  })();
-  return true;
+    })();
+  });
 });
